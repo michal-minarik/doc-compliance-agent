@@ -1,5 +1,6 @@
 import os
-from typing import List
+import mimetypes
+from typing import List, Dict
 from google.cloud import storage
 
 BUCKET_NAME = os.getenv("BUCKET_NAME", "agent-work-dir")
@@ -20,31 +21,29 @@ def list_gcs_documents() -> List[str]:
     except Exception as e:
         return [f"Error listing documents: {str(e)}"]
 
-def read_gcs_document(gcs_uri: str) -> str:
-    """Reads the content of a specific document from GCS.
+def read_gcs_document(gcs_uri: str) -> Dict[str, str]:
+    """Reads the content of a specific document from GCS and returns its URI and mime type.
     
     Args:
         gcs_uri: The specific GCS file URI (e.g., gs://agent-work-dir/inputs/doc1.txt).
     
     Returns:
-        str: The raw text content of the document.
+        Dict[str, str]: A dictionary containing the GCS URI and the inferred mime type.
     """
     try:
         if not gcs_uri.startswith("gs://"):
-            return "Error: Invalid GCS URI. Must start with gs://"
+            raise ValueError("Invalid GCS URI. Must start with gs://")
         
-        path_parts = gcs_uri.replace("gs://", "").split("/", 1)
-        bucket_name = path_parts[0]
-        blob_name = path_parts[1]
-        
-        storage_client = storage.Client()
-        bucket = storage_client.bucket(bucket_name)
-        blob = bucket.blob(blob_name)
-        
-        content = blob.download_as_text()
-        return content
+        mime_type, _ = mimetypes.guess_type(gcs_uri)
+        if not mime_type:
+            # Default to plain text if mime type can't be inferred
+            mime_type = "text/plain"
+            
+        return {"gcs_uri": gcs_uri, "mime_type": mime_type}
     except Exception as e:
-        return f"Error reading document: {str(e)}"
+        # It's better to return a descriptive error message
+        # but for now, we'll raise the exception to be caught by the agent.
+        raise e
 
 def write_gcs_report(report_content: str) -> str:
     """Writes the final generated markdown report back to GCS.
