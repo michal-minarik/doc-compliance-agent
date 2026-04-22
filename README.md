@@ -17,6 +17,10 @@ The agent is designed to be a multimodal, capable of analyzing various document 
 - Python 3.x
 - An active Google Cloud project
 - The `gcloud` CLI installed and authenticated (`gcloud auth application-default login`)
+- The following Google Cloud APIs enabled in your project:
+    - Vertex AI API (`aiplatform.googleapis.com`)
+    - Cloud Storage API (`storage.googleapis.com`)
+    - Cloud Run API (`run.googleapis.com`)
 
 ### Installation
 
@@ -41,6 +45,16 @@ The agent is designed to be a multimodal, capable of analyzing various document 
 
 The agent requires environment variables to be set for the Google Cloud Project and the GCS bucket.
 
+You can set these directly in your terminal, or create a `.env` file in the root of the project. The `python-dotenv` package will automatically load them.
+
+**Using a `.env` file (Recommended):**
+Create a file named `.env` and add the following lines:
+```env
+GOOGLE_CLOUD_PROJECT="your-gcp-project-id"
+BUCKET_NAME="your-gcs-bucket-name"
+```
+
+**Using terminal exports:**
 1.  **Set the `GOOGLE_CLOUD_PROJECT` environment variable:**
     ```bash
     export GOOGLE_CLOUD_PROJECT="your-gcp-project-id"
@@ -50,7 +64,8 @@ The agent requires environment variables to be set for the Google Cloud Project 
     ```bash
     export BUCKET_NAME="your-gcs-bucket-name"
     ```
-    If `BUCKET_NAME` is not set, it defaults to `agent-work-dir`.
+
+*Note: If `BUCKET_NAME` is not set, it defaults to `agent-work-dir`.*
 
 3.  **Upload documents for analysis:**
     Upload the files you want the agent to analyze into your GCS bucket under a folder named `inputs/`.
@@ -78,3 +93,11 @@ The agent is designed to be run using the `adk` command-line interface.
 -   `agent_tools.py`: Implements the tools the agent uses to interact with GCS.
 -   `requirements.txt`: Lists the Python dependencies for the project.
 -   `GEMINI.md`: Contains detailed internal documentation and instructions for the Gemini agent.
+
+## Extending the Agent / Contributing
+
+To improve or extend the capabilities of the agent, follow these steps:
+
+1.  **Add a new tool function** in `agent_tools.py`. Ensure you include type hints and a detailed docstring, as the `adk` uses this information to describe the tool to the LLM.
+2.  **Register the tool** in `agent.py`. Import your new function and add it to the `tools` list when initializing the `adk.Agent`.
+3.  **Update the agent prompt** (if necessary) in `agent.py` to inform the agent about its new capabilities and when to use the new tool.
